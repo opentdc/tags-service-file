@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<project name="opentdc-tags-service-file" default="build" basedir=".">
+<project name="opentdc-tags-service-file" basedir=".">
 
 	<property environment="env"/>
 	<property name="java.build.platform" value="jre-1.7" />
