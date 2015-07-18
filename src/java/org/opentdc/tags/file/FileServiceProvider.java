@@ -378,6 +378,16 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 			throw new NotFoundException("LocalizedText <" + tid + "/lang/" + lid +
 					"> was not found.");
 		}
+		if (tag.getText() == null || tag.getText().isEmpty()) {
+			throw new ValidationException("LocalizedText <" + tid + "/lang/" + lid + 
+					"> must contain a valid text.");
+		}
+		// enforce that the title is a single word
+		StringTokenizer _tokenizer = new StringTokenizer(tag.getText());
+		if (_tokenizer.countTokens() != 1) {
+			throw new ValidationException("LocalizedText <" + tid + "/lang/" + lid + 
+					"> must consist of exactly one word <" + tag.getText() + "> (is " + _tokenizer.countTokens() + ").");
+		}
 		if (! _localizedText.getCreatedAt().equals(tag.getCreatedAt())) {
 			logger.warning("LocalizedText <" + tid + "/lang/" + lid + ">: ignoring createAt value <" 
 					+ tag.getCreatedAt().toString() + "> because it was set on the client.");
