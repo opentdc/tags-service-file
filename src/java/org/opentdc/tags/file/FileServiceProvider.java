@@ -38,7 +38,7 @@ import javax.servlet.ServletContext;
 
 import org.opentdc.file.AbstractFileServiceProvider;
 import org.opentdc.tags.TagTextModel;
-import org.opentdc.tags.TagsModel;
+import org.opentdc.tags.TagModel;
 import org.opentdc.tags.ServiceProvider;
 import org.opentdc.service.LocalizedTextModel;
 import org.opentdc.service.exception.DuplicateException;
@@ -151,8 +151,8 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 	 * @see org.opentdc.tags.ServiceProvider#create(org.opentdc.tags.TagsModel)
 	 */
 	@Override
-	public TagsModel create(
-		TagsModel tag) 
+	public TagModel create(
+		TagModel tag) 
 	throws DuplicateException, ValidationException {
 		TextedTag _textedTag = null;
 		logger.info("create(" + PrettyPrinter.prettyPrintAsJSON(tag) + ")");
@@ -189,10 +189,10 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 	 * @see org.opentdc.tags.ServiceProvider#read(java.lang.String)
 	 */
 	@Override
-	public TagsModel read(
+	public TagModel read(
 		String id) 
 	throws NotFoundException {
-		TagsModel _tag = readTextedTag(id).getModel();
+		TagModel _tag = readTextedTag(id).getModel();
 		logger.info("read(" + id + ") -> " + PrettyPrinter.prettyPrintAsJSON(_tag));
 		return _tag;
 	}
@@ -219,12 +219,12 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 	 * @see org.opentdc.tags.ServiceProvider#update(java.lang.String, org.opentdc.tags.TagsModel)
 	 */
 	@Override
-	public TagsModel update(
+	public TagModel update(
 		String id, 
-		TagsModel tag
+		TagModel tag
 	) throws NotFoundException, ValidationException {
 		TextedTag _textedTag = readTextedTag(id);
-		TagsModel _tagsModel = _textedTag.getModel();
+		TagModel _tagsModel = _textedTag.getModel();
 		if (! _tagsModel.getCreatedAt().equals(tag.getCreatedAt())) {
 			logger.warning("tag <" + id + ">: ignoring createdAt value <" + tag.getCreatedAt().toString() + 
 					"> because it was set on the client.");

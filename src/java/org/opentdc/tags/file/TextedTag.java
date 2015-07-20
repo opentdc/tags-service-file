@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.opentdc.service.LocalizedTextModel;
-import org.opentdc.tags.TagsModel;
+import org.opentdc.tags.TagModel;
 import org.opentdc.util.LanguageCode;
 
 /**
@@ -35,7 +35,7 @@ import org.opentdc.util.LanguageCode;
  *
  */
 public class TextedTag {
-	private TagsModel model;
+	private TagModel model;
 	ArrayList<LocalizedTextModel> localizedTexts;
 	
 	/**
@@ -49,7 +49,7 @@ public class TextedTag {
 	 * Retrieve the TagsModel.
 	 * @return the model
 	 */
-	public TagsModel getModel() {
+	public TagModel getModel() {
 		return model;
 	}
 	
@@ -57,7 +57,7 @@ public class TextedTag {
 	 * Set the TagsModel.
 	 * @param model
 	 */
-	public void setModel(TagsModel model) {
+	public void setModel(TagModel model) {
 		this.model = model;
 	}
 	
