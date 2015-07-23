@@ -99,9 +99,9 @@ public class TextedTag {
 	 * @param langCode the LanguageCode to test for
 	 * @return true if the LanguageCode is contained, false if otherwise
 	 */
-	public boolean containsLocalizedText(LanguageCode langCode) {
+	public boolean containsLocalizedText(LanguageCode languageCode) {
 		for (LocalizedTextModel _localizedText : localizedTexts) {
-			if (_localizedText.getLangCode() == langCode) {
+			if (_localizedText.getLanguageCode() == languageCode) {
 				return true;
 			}
 		}
@@ -113,9 +113,9 @@ public class TextedTag {
 	 * @param langCode the LanguageCode to look for
 	 * @return the LocalizedTextModel with the LanguageCode found or null if no such LocalizedText exists.
 	 */
-	public LocalizedTextModel getLocalizedText(LanguageCode langCode) {
+	public LocalizedTextModel getLocalizedText(LanguageCode languageCode) {
 		for (LocalizedTextModel _localizedText : localizedTexts) {
-			if (_localizedText.getLangCode() == langCode) {
+			if (_localizedText.getLanguageCode() == languageCode) {
 				return _localizedText;
 			}
 		}

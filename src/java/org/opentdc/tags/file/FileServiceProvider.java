@@ -312,12 +312,12 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 					"> must consist of exactly one word <" + tag.getText() + "> (is " + _tokenizer.countTokens() + ").");
 		}
 		TextedTag _textedTag = readTextedTag(tid);
-		if (tag.getLangCode() == null) {
+		if (tag.getLanguageCode() == null) {
 			throw new ValidationException("LocalizedText <" + tid + "/lang/" + tag.getId() + 
 					"> must contain a LanguageCode.");
 		}
-		if (_textedTag.containsLocalizedText(tag.getLangCode())) {
-			throw new DuplicateException("LocalizedText with LanguageCode <" + tag.getLangCode() + 
+		if (_textedTag.containsLocalizedText(tag.getLanguageCode())) {
+			throw new DuplicateException("LocalizedText with LanguageCode <" + tag.getLanguageCode() + 
 					"> exists already in tag <" + tid + ">.");
 		}
 		String _id = tag.getId();
@@ -396,7 +396,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 			logger.warning("LocalizedText <" + tid + "/lang/" + lid + ">: ignoring createBy value <"
 					+ tag.getCreatedBy() + "> because it was set on the client.");
 		}
-		if (_localizedText.getLangCode() != tag.getLangCode()) {
+		if (_localizedText.getLanguageCode() != tag.getLanguageCode()) {
 			throw new ValidationException("LocalizedText <" + tid + "/lang/" + lid + 
 					">: it is not allowed to change the LanguageCode.");
 		}
