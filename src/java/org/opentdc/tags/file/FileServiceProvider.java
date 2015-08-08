@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 import javax.servlet.ServletContext;
 
 import org.opentdc.file.AbstractFileServiceProvider;
-import org.opentdc.tags.TagTextModel;
+import org.opentdc.tags.SingleLangTag;
 import org.opentdc.tags.TagModel;
 import org.opentdc.tags.ServiceProvider;
 import org.opentdc.service.LocalizedTextModel;
@@ -53,8 +53,8 @@ import org.opentdc.util.PrettyPrinter;
  * @author Bruno Kaiser
  *
  */
-public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> implements ServiceProvider {
-	private static Map<String, TextedTag> index = null;
+public class FileServiceProvider extends AbstractFileServiceProvider<MultiLangTag> implements ServiceProvider {
+	private static Map<String, MultiLangTag> index = null;
 	private static Map<String, LocalizedTextModel> textIndex = null;
 	private static final Logger logger = Logger.getLogger(FileServiceProvider.class.getName());
 
@@ -71,10 +71,10 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 		super(context, prefix);
 		logger.info("tags-service.FileServiceProvider.Constructor()");
 		if (index == null) {
-			index = new ConcurrentHashMap<String, TextedTag>();
+			index = new ConcurrentHashMap<String, MultiLangTag>();
 			textIndex = new ConcurrentHashMap<String, LocalizedTextModel>();
-			List<TextedTag> _tags = importJson();
-			for (TextedTag _tag : _tags) {
+			List<MultiLangTag> _tags = importJson();
+			for (MultiLangTag _tag : _tags) {
 				index.put(_tag.getModel().getId(), _tag);
 				for (LocalizedTextModel _tm : _tag.getLocalizedTexts()) {
 					textIndex.put(_tm.getId(), _tm);
@@ -90,30 +90,29 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 	 * @see org.opentdc.tags.ServiceProvider#list(java.lang.String, java.lang.String, int, int)
 	 */
 	@Override
-	public ArrayList<TagTextModel> list(
+	public ArrayList<SingleLangTag> list(
 		String queryType,
 		String query,
 		int position,
-		int size
-	) {
-		ArrayList<TagTextModel> _tags = new ArrayList<TagTextModel>();
+		int size) {
+		ArrayList<SingleLangTag> _tags = new ArrayList<SingleLangTag>();
 		LocalizedTextModel _ltm = null;
-		LanguageCode _lc = getLanguageCode(query);
-		for (TextedTag _textedTag : index.values()) {
+		LanguageCode _lc = LanguageCode.getLanguageCodeFromQuery(query);
+		for (MultiLangTag _multiLangTag : index.values()) {
 			if (_lc != null) { // return only the texts in this specific language
-				_ltm = _textedTag.getLocalizedText(_lc);
+				_ltm = _multiLangTag.getLocalizedText(_lc);
 				if (_ltm != null) {
-					_tags.add(new TagTextModel(_textedTag.getModel().getId(), _ltm, getPrincipal()));
+					_tags.add(new SingleLangTag(_multiLangTag.getModel().getId(), _ltm, getPrincipal()));
 				}
 			} else {  // return all texts in all languages
-				List<LocalizedTextModel> _texts = _textedTag.getLocalizedTexts();
+				List<LocalizedTextModel> _texts = _multiLangTag.getLocalizedTexts();
 				for (LocalizedTextModel _lm : _texts) {
-					_tags.add(new TagTextModel(_textedTag.getModel().getId(), _lm, getPrincipal()));
+					_tags.add(new SingleLangTag(_multiLangTag.getModel().getId(), _lm, getPrincipal()));
 				}
 			}
 		}
-		Collections.sort(_tags, TagTextModel.TagComparator);
-		ArrayList<TagTextModel> _selection = new ArrayList<TagTextModel>();
+		Collections.sort(_tags, SingleLangTag.TagComparator);
+		ArrayList<SingleLangTag> _selection = new ArrayList<SingleLangTag>();
 		for (int i = 0; i < _tags.size(); i++) {
 			if (i >= position && i < (position + size)) {
 				_selection.add(_tags.get(i));
@@ -123,38 +122,15 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 				">, <" + position + ">, <" + size + ">) -> " + _selection.size() + " tags.");
 		return _selection;
 	}
-	
-	private LanguageCode getLanguageCode(String query) {
-		LanguageCode _lc = null;
-		logger.info("getLanguageCode(" + query + ")");
-		int _index = query.toLowerCase().indexOf("lang");
-		if (_index >= 0) {
-			if (query.length() >= (_index + 7)) {
-				String _lang = query.substring(_index + 5, _index + 7);
-				logger.info("list: found query <lang=" + _lang + ">");	
-				try {
-					_lc = LanguageCode.valueOf(_lang);
-				}
-				catch(java.lang.IllegalArgumentException _ex) {
-					throw new ValidationException("query contains wrong language code: <" + _lc + ">.");
-				}
-			}
-			else {
-				throw new ValidationException("query is wrongly formatted");
-			}
-		}
-		// else  no lang query defined
-		return _lc;
-	}
-	
+		
 	/* (non-Javadoc)
-	 * @see org.opentdc.tags.ServiceProvider#create(org.opentdc.tags.TagsModel)
+	 * @see org.opentdc.tags.ServiceProvider#create(org.opentdc.tags.TagModel)
 	 */
 	@Override
 	public TagModel create(
 		TagModel tag) 
 	throws DuplicateException, ValidationException {
-		TextedTag _textedTag = null;
+		MultiLangTag _multiLangTag = null;
 		logger.info("create(" + PrettyPrinter.prettyPrintAsJSON(tag) + ")");
 		String _id = tag.getId();
 		Date _date = new Date();
@@ -165,11 +141,11 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 			tag.setCreatedBy(getPrincipal());
 			tag.setModifiedAt(_date);
 			tag.setModifiedBy(getPrincipal());
-			_textedTag = new TextedTag();
-			_textedTag.setModel(tag);
+			_multiLangTag = new MultiLangTag();
+			_multiLangTag.setModel(tag);
 		} else {
-			_textedTag = index.get(_id);
-			if (_textedTag != null) {
+			_multiLangTag = index.get(_id);
+			if (_multiLangTag != null) {
 				throw new DuplicateException("tag <" + _id + "> exists already.");
 			}
 			else { 	// a new ID was set on the client; we do not allow this
@@ -177,12 +153,12 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 					"> contains an ID generated on the client. This is not allowed.");
 			}
 		}
-		index.put(_id,  _textedTag);
-		logger.info("create() -> " + PrettyPrinter.prettyPrintAsJSON(_textedTag.getModel()));
+		index.put(_id,  _multiLangTag);
+		logger.info("create() -> " + PrettyPrinter.prettyPrintAsJSON(_multiLangTag.getModel()));
 		if (isPersistent) {
 			exportJson(index.values());
 		}
-		return _textedTag.getModel();
+		return _multiLangTag.getModel();
 	}
 
 	/* (non-Javadoc)
@@ -192,56 +168,56 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 	public TagModel read(
 		String id) 
 	throws NotFoundException {
-		TagModel _tag = readTextedTag(id).getModel();
+		TagModel _tag = readMultiLangTag(id).getModel();
 		logger.info("read(" + id + ") -> " + PrettyPrinter.prettyPrintAsJSON(_tag));
 		return _tag;
 	}
 	
 	/**
-	 * Retrieve a TextedTag from the index.
+	 * Retrieve a MultiLangTag from the index.
 	 * @param id
-	 * @return the TextedTag
-	 * @throws NotFoundException if the index did not contain a TextedTag with this id
+	 * @return the MultiLangTag
+	 * @throws NotFoundException if the index did not contain a MultiLangTag with this id
 	 */
-	private TextedTag readTextedTag(
+	private MultiLangTag readMultiLangTag(
 			String id
 	) throws NotFoundException {
-		TextedTag _textedTag = index.get(id);
-		if (_textedTag == null) {
+		MultiLangTag _multiLangTag = index.get(id);
+		if (_multiLangTag == null) {
 			throw new NotFoundException("tag <" + id
 					+ "> was not found.");
 		}
-		logger.info("readTextedTag(" + id + ") -> " + PrettyPrinter.prettyPrintAsJSON(_textedTag));
-		return _textedTag;
+		logger.info("readMultiLangTag(" + id + ") -> " + PrettyPrinter.prettyPrintAsJSON(_multiLangTag));
+		return _multiLangTag;
 	}
 
 	/* (non-Javadoc)
-	 * @see org.opentdc.tags.ServiceProvider#update(java.lang.String, org.opentdc.tags.TagsModel)
+	 * @see org.opentdc.tags.ServiceProvider#update(java.lang.String, org.opentdc.tags.TagModel)
 	 */
 	@Override
 	public TagModel update(
 		String id, 
 		TagModel tag
 	) throws NotFoundException, ValidationException {
-		TextedTag _textedTag = readTextedTag(id);
-		TagModel _tagsModel = _textedTag.getModel();
-		if (! _tagsModel.getCreatedAt().equals(tag.getCreatedAt())) {
+		MultiLangTag _multiLangTag = readMultiLangTag(id);
+		TagModel _tagModel = _multiLangTag.getModel();
+		if (! _tagModel.getCreatedAt().equals(tag.getCreatedAt())) {
 			logger.warning("tag <" + id + ">: ignoring createdAt value <" + tag.getCreatedAt().toString() + 
 					"> because it was set on the client.");
 		}
-		if (! _tagsModel.getCreatedBy().equalsIgnoreCase(tag.getCreatedBy())) {
+		if (! _tagModel.getCreatedBy().equalsIgnoreCase(tag.getCreatedBy())) {
 			logger.warning("tag <" + id + ">: ignoring createdBy value <" + tag.getCreatedBy() +
 					"> because it was set on the client.");
 		}
-		_tagsModel.setModifiedAt(new Date());
-		_tagsModel.setModifiedBy(getPrincipal());
-		_textedTag.setModel(_tagsModel);
-		index.put(id, _textedTag);
-		logger.info("update(" + id + ") -> " + PrettyPrinter.prettyPrintAsJSON(_tagsModel));
+		_tagModel.setModifiedAt(new Date());
+		_tagModel.setModifiedBy(getPrincipal());
+		_multiLangTag.setModel(_tagModel);
+		index.put(id, _multiLangTag);
+		logger.info("update(" + id + ") -> " + PrettyPrinter.prettyPrintAsJSON(_tagModel));
 		if (isPersistent) {
 			exportJson(index.values());
 		}
-		return _tagsModel;
+		return _tagModel;
 	}
 
 	/* (non-Javadoc)
@@ -251,13 +227,13 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 	public void delete(
 		String id) 
 	throws NotFoundException, InternalServerErrorException {
-		TextedTag _textedTag = readTextedTag(id);  // throws NotFound
+		MultiLangTag _multiLangTag = readMultiLangTag(id);  // throws NotFound
 		if (index.remove(id) == null) {
 			throw new InternalServerErrorException("tag <" + id
 				+ "> can not be removed, because it does not exist in the index");
 		} else {			// remove was ok
 			// remove all LocalizedTexts members
-			for (LocalizedTextModel _ltm : _textedTag.getLocalizedTexts()) {
+			for (LocalizedTextModel _ltm : _multiLangTag.getLocalizedTexts()) {
 				if (textIndex.remove(_ltm.getId()) == null) {
 					throw new InternalServerErrorException("tag <" + id +
 						">: LocalizedText <" + _ltm.getId() + 
@@ -274,6 +250,9 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 	}
 
 	/************************************** localized texts (lang) ************************************/
+	/* (non-Javadoc)
+	 * @see org.opentdc.tags.ServiceProvider#listTexts(java.lang.String, java.lang.String, java.lang.String, int, int)
+	 */
 	@Override
 	public List<LocalizedTextModel> listTexts(
 			String tid, 
@@ -281,7 +260,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 			String query, 
 			int position, 
 			int size) {
-		List<LocalizedTextModel> _localizedTexts = readTextedTag(tid).getLocalizedTexts();
+		List<LocalizedTextModel> _localizedTexts = readMultiLangTag(tid).getLocalizedTexts();
 		Collections.sort(_localizedTexts, LocalizedTextModel.LocalizedTextComparator);
 		
 		ArrayList<LocalizedTextModel> _selection = new ArrayList<LocalizedTextModel>();
@@ -296,6 +275,9 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 		return _selection;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.opentdc.tags.ServiceProvider#createText(java.lang.String, org.opentdc.service.LocalizedTextModel)
+	 */
 	@Override
 	public LocalizedTextModel createText(
 			String tid, 
@@ -311,12 +293,12 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 			throw new ValidationException("LocalizedText <" + tid + "/lang/" + tag.getId() + 
 					"> must consist of exactly one word <" + tag.getText() + "> (is " + _tokenizer.countTokens() + ").");
 		}
-		TextedTag _textedTag = readTextedTag(tid);
+		MultiLangTag _multiLangTag = readMultiLangTag(tid);
 		if (tag.getLanguageCode() == null) {
 			throw new ValidationException("LocalizedText <" + tid + "/lang/" + tag.getId() + 
 					"> must contain a LanguageCode.");
 		}
-		if (_textedTag.containsLocalizedText(tag.getLanguageCode())) {
+		if (_multiLangTag.containsLocalizedText(tag.getLanguageCode())) {
 			throw new DuplicateException("LocalizedText with LanguageCode <" + tag.getLanguageCode() + 
 					"> exists already in tag <" + tid + ">.");
 		}
@@ -342,7 +324,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 		tag.setModifiedBy(getPrincipal());
 		
 		textIndex.put(_id, tag);
-		_textedTag.addText(tag);
+		_multiLangTag.addText(tag);
 		logger.info("createText(" + tid + "/lang/" + tag.getId() + ") -> " + PrettyPrinter.prettyPrintAsJSON(tag));
 		if (isPersistent) {
 			exportJson(index.values());
@@ -350,12 +332,15 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 		return tag;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.opentdc.tags.ServiceProvider#readText(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public LocalizedTextModel readText(
 			String tid, 
 			String lid)
 			throws NotFoundException {
-		readTextedTag(tid);
+		readMultiLangTag(tid);
 		LocalizedTextModel _localizedText = textIndex.get(lid);
 		if (_localizedText == null) {
 			throw new NotFoundException("LocalizedText <" + tid + "/lang/" + lid +
@@ -366,13 +351,16 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 		return _localizedText;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.opentdc.tags.ServiceProvider#updateText(java.lang.String, java.lang.String, org.opentdc.service.LocalizedTextModel)
+	 */
 	@Override
 	public LocalizedTextModel updateText(
 			String tid, 
 			String lid,
 			LocalizedTextModel tag) 
 					throws NotFoundException, ValidationException {
-		readTextedTag(tid);
+		readMultiLangTag(tid);
 		LocalizedTextModel _localizedText = textIndex.get(lid);
 		if (_localizedText == null) {
 			throw new NotFoundException("LocalizedText <" + tid + "/lang/" + lid +
@@ -411,20 +399,23 @@ public class FileServiceProvider extends AbstractFileServiceProvider<TextedTag> 
 		return _localizedText;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.opentdc.tags.ServiceProvider#deleteText(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void deleteText(
 			String tid, 
 			String lid) 
 					throws NotFoundException, InternalServerErrorException {
-		TextedTag _textedTag = readTextedTag(tid);
+		MultiLangTag _multiLangTag = readMultiLangTag(tid);
 		LocalizedTextModel _localizedText = textIndex.get(lid);
 		if (_localizedText == null) {
 			throw new NotFoundException("LocalizedText <" + tid + "/lang/" + lid +
 					"> was not found.");
 		}
 		
-		// 1) remove the LocalizedText from its TextedTag
-		if (_textedTag.removeText(_localizedText) == false) {
+		// 1) remove the LocalizedText from its MultiLangTag
+		if (_multiLangTag.removeText(_localizedText) == false) {
 			throw new InternalServerErrorException("LocalizedText <" + tid + "/lang/" + lid
 					+ "> can not be removed, because it is an orphan.");
 		}

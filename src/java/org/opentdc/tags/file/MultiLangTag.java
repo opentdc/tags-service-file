@@ -34,14 +34,14 @@ import org.opentdc.util.LanguageCode;
  * @author Bruno Kaiser
  *
  */
-public class TextedTag {
+public class MultiLangTag {
 	private TagModel model;
 	ArrayList<LocalizedTextModel> localizedTexts;
 	
 	/**
 	 * Constructor.
 	 */
-	public TextedTag() {
+	public MultiLangTag() {
 		localizedTexts = new ArrayList<LocalizedTextModel>();
 	}
 	
