@@ -122,7 +122,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<MultiLangTa
 				">, <" + position + ">, <" + size + ">) -> " + _selection.size() + " tags.");
 		return _selection;
 	}
-		
+			
 	/* (non-Javadoc)
 	 * @see org.opentdc.tags.ServiceProvider#create(org.opentdc.tags.TagModel)
 	 */
@@ -172,14 +172,14 @@ public class FileServiceProvider extends AbstractFileServiceProvider<MultiLangTa
 		logger.info("read(" + id + ") -> " + PrettyPrinter.prettyPrintAsJSON(_tag));
 		return _tag;
 	}
-	
+		
 	/**
 	 * Retrieve a MultiLangTag from the index.
 	 * @param id
 	 * @return the MultiLangTag
 	 * @throws NotFoundException if the index did not contain a MultiLangTag with this id
 	 */
-	private MultiLangTag readMultiLangTag(
+	public static MultiLangTag readMultiLangTag(
 			String id
 	) throws NotFoundException {
 		MultiLangTag _multiLangTag = index.get(id);
@@ -189,6 +189,29 @@ public class FileServiceProvider extends AbstractFileServiceProvider<MultiLangTa
 		}
 		logger.info("readMultiLangTag(" + id + ") -> " + PrettyPrinter.prettyPrintAsJSON(_multiLangTag));
 		return _multiLangTag;
+	}
+	
+	/**
+	 * @param id
+	 * @param lang
+	 * @return
+	 * @throws NotFoundException
+	 */
+	public static String getLocalizedText(
+			String id,
+			LanguageCode lang) 
+			throws NotFoundException {
+		if (lang == null) {
+			logger.warning("lang is null; using default");
+			lang = LanguageCode.getDefaultLanguageCode();
+		}
+		LocalizedTextModel _ltm = readMultiLangTag(id).getLocalizedText(lang);
+		if (_ltm != null) {
+			return _ltm.getText();
+		}
+		else {
+			return "UNDEFINED";
+		}
 	}
 
 	/* (non-Javadoc)
@@ -430,5 +453,10 @@ public class FileServiceProvider extends AbstractFileServiceProvider<MultiLangTa
 		if (isPersistent) {
 			exportJson(index.values());
 		}		
+	}
+
+	public static TagModel getTagsModel(String tagId) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
