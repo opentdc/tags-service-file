@@ -91,8 +91,8 @@ public class FileServiceProvider extends AbstractFileServiceProvider<MultiLangTa
 	 */
 	@Override
 	public ArrayList<SingleLangTag> list(
-		String queryType,
 		String query,
+		String queryType,
 		int position,
 		int size) {
 		ArrayList<SingleLangTag> _tags = new ArrayList<SingleLangTag>();
